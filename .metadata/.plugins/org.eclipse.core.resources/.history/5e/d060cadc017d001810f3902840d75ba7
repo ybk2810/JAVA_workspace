@@ -1,0 +1,151 @@
+package ProjectGG;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+
+public class parabola extends JPanel implements Runnable {
+	int angle = 5;
+	int angle_vel = 1;
+	int power = 0;
+	int power_vel = 1;
+	int step = 0;// 상태
+	double xd = 0.01;
+	double yd = 0.5;
+	double ballx;
+	double bally;
+	double ballvelx;
+	double ballvely;
+	double gravity = 0.03d;// 중력
+
+	JProgressBar jb;
+	JLabel lb;
+
+	boolean b = true;
+
+	public parabola() {
+		setLayout(null);
+
+		jb = new JProgressBar();// 프로그레스바 생성
+		jb.setBounds(400, 400, 160, 30);
+		jb.setValue(0);
+		jb.setMinimum(0);
+		jb.setMaximum(100);
+		jb.setStringPainted(true);
+		jb.setBackground(Color.YELLOW);
+		jb.setForeground(Color.RED);
+
+		addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				step++;// 키를 누룰때 마다 상태가 바뀜
+				if (step == 2) {// 상태가 2일 경우
+					add(jb);// 프로그레스 바 화면에 넣기
+				} else if (step == 3) {// 각도와 힘으로 공 움직이기
+					ballx = 50;
+					bally = 430;// 공의 초기위치
+					ballvelx = (power * Math.cos(angle * (Math.PI / 180))) * 0.05;
+					ballvely = -(power * Math.sin(angle * (Math.PI / 180))) * 0.05;
+				} else if (step == 4) {// 4가 되면 처음 부터
+					step = 0;
+					remove(jb);// 초기화 될경우 프로그레스바 화면에서 지우기
+				}
+			}
+		});
+		Thread t = new Thread(this);// 게임 루프
+		t.start();
+	}
+
+	public void Process() {
+		switch (step) {
+		case 1:// 스탭1 이면 각도 선택
+			angle += angle_vel;
+			if (angle > 80 || angle < 5) {
+				angle_vel *= -1;
+			}
+			break;
+		case 2:// 스탭2 이면 파워 선택
+			power += power_vel;
+			if (power > 99 || power < 1) {
+				power_vel *= -1;
+			}
+			jb.setValue(power);// 파워값을 프로그래스바로 표현
+			break;
+		case 3:// 스탭3 이면 각도와 힘으로 공 포불선 움직임
+			ballx += ballvelx;
+			bally += ballvely;
+			ballvely += gravity;// 중력 값을 더해줌
+			if (bally > 480) {
+				ballvely = ballvely - (yd - gravity);
+				if (bally == 480) {// 갈수록 x 의 값이 감소 갈수록 y의값이 증가해서 0일때는 멈춤
+					ballx = 0;
+					ballvely = 0;
+					if (bally > 0) {
+						break;
+					}
+					// angle-=1;
+					// power-=1;
+					// ballvely-=gravity;
+					// ballvelx=0;
+					// ballvely=0;
+				}
+			}
+			break;
+		}
+	}
+
+	@Override
+	protected void paintComponent(Graphics g) {
+		g.clearRect(0, 0, getWidth(), getHeight());
+		switch (step) {
+		case 1:
+			g.setColor(Color.red);
+			g.fillArc(50, 50, 100, 100, 5, angle);
+			System.out.println("> " + angle);
+			break;
+		case 2:
+			// g.setColor(Color.orange);
+			// g.fillRect(50, 50, 50, -power);
+			g.setColor(Color.red);
+			g.fillArc(50, 50, 100, 100, 5, angle);
+			break;
+		case 3:
+			// g.setColor(Color.orange);
+			// g.fillRect(50, 50, 50, -power);
+			g.setColor(Color.red);
+			g.fillArc(50, 50, 100, 100, 5, power);
+			g.setColor(Color.black);
+			g.fillOval((int) ballx - 5, (int) bally - 5, 10, 10);
+			break;
+		}
+	}
+
+	@Override
+	public void run() {
+		while (true) {
+			try {
+				Process();
+				repaint();
+				Thread.sleep(7);
+			} catch (InterruptedException e1) {
+			}
+		}
+	}
+
+	public static void main(String[] args) {
+		// GaugeUpdate gu = new GaugeUpdate();
+		JFrame f = new JFrame();
+		parabola t = new parabola();
+		f.getContentPane().add(t);
+		f.setSize(1000, 600);
+		f.setVisible(true);
+		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		t.requestFocus();
+	}
+}
